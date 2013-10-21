@@ -1,0 +1,8 @@
+eclipse.preferences.version=1
+errorparser.default.ids=org.eclipse.cdt.autotools.core.ErrorParser;org.eclipse.cdt.core.GASErrorParser;org.eclipse.cdt.core.GLDErrorParser;org.eclipse.cdt.core.GCCErrorParser;org.eclipse.cdt.core.GmakeErrorParser;org.eclipse.cdt.core.VCErrorParser;org.eclipse.cdt.core.CWDLocator;org.eclipse.cdt.core.MakeErrorParser;org.eclipse.cdt.ui.Boost Test Output Parser
+includes.beginExportsPattern=IWYU\\s+(pragma\:?\\s+)?begin_exports?
+includes.endExportsPattern=IWYU\\s+(pragma\:?\\s+)?end_exports?
+includes.exportPattern=IWYU\\s+(pragma\:?\\s+)?export
+language.settings.providers.workspace.prefs.toggle=false
+macros/workspace=<?xml version\="1.0" encoding\="UTF-8" standalone\="no"?>\n<macros/>\n
+org.eclipse.cdt.core.showSourceRootsAtTopLevelOfProject=true
