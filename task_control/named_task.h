@@ -50,7 +50,7 @@ public:
 	typedef std::function<void(bool)> init_callback_t;
 	typedef std::function<TASK_FUNC_SIG(T)> task_function_t;
 
-	named_task(const std::string& name, task_function_t&& task);
+	named_task(const std::string& name, task_function_t task);
 	named_task(named_task&& original);
 	named_task() = delete;
 	named_task(const named_task&) = delete;
@@ -74,9 +74,9 @@ private:
 };
 
 template<typename T>
-named_task<T>::named_task(const std::string& name, task_function_t&& task)
+named_task<T>::named_task(const std::string& name, task_function_t task)
 	: name_{name},
-	  task_{std::move(task)},
+	  task_{task},
 	  shutdown_{false} {
 }
 
@@ -105,6 +105,8 @@ const std::string& named_task<T>::name() const {
 template<typename T>
 std::future<bool> named_task<T>::start() {
 	shutdown_ = false;
+	init_result_ = std::promise<bool>{};
+	task_.reset();
 	result_ = task_.get_future();
 	auto init_callback = [&](bool success) { std::lock_guard<std::mutex> lock{mutex_}; init_result_.set_value(success); };
 	thread_ = std::thread{std::move(task_), std::move(init_callback), std::ref(shutdown_)};

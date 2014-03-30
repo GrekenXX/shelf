@@ -132,3 +132,20 @@ TEST_F(test_named_task, still_running_false) {
 
 	ASSERT_FALSE(task.still_running(chrono::duration_cast<chrono::milliseconds>(stop_wait)));
 }
+
+TEST_F(test_named_task, stop_and_restart) {
+	task_function.succeed_start = true;
+	task_function.timeout_stop = false;
+	task_function.run_for = std::chrono::seconds{100};
+	auto init_result = task.start();
+	ASSERT_TRUE(init_result.get());
+
+	auto task_result = task.stop();
+	ASSERT_EQ(future_status::ready, task_result.wait_for(stop_wait));
+
+	init_result = task.start();
+	ASSERT_TRUE(init_result.get());
+
+	task_result = task.stop();
+	ASSERT_EQ(future_status::ready, task_result.wait_for(stop_wait));
+}

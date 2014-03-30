@@ -37,15 +37,9 @@
 using namespace task_control;
 using namespace std;
 
-TEST(test_task_batch_stack, single_task) {
+TEST(test_task_batch_stack, single_task_in_single_batch) {
 	testing_task_function task_function;
-	int myNumber{0};
-	mutex mut;
-	condition_variable cond;
-	task_function.repetitive_task = [&]() {
-		lock_guard<mutex> lock{mut};
-		if(++myNumber > 10) cond.notify_one();
-	};
+	task_function.run_for = chrono::milliseconds{50};
 
 	task_batch<int> batch;
 	batch.add(named_task<int>{"my_simple_task", ref(task_function)});
@@ -53,15 +47,77 @@ TEST(test_task_batch_stack, single_task) {
 	task_batch_stack<int> stack;
 	stack.push_top(move(batch));
 
-	ASSERT_EQ(0,stack.inspect(chrono::milliseconds{100}));
-	stack.set_level(1);
-	ASSERT_EQ(1,stack.inspect(chrono::milliseconds{100}));
+	ASSERT_EQ(0,stack.inspect(chrono::milliseconds{10}));
 
-	{
-		unique_lock<mutex> lock{mut};
-		while(myNumber<=10) cond.wait_for(lock, chrono::seconds{5}, [&](){return myNumber>10;});
-	}
+	ASSERT_EQ(1,stack.set_level(1));
+	ASSERT_EQ(1,stack.inspect(chrono::milliseconds{10}));
 
-	stack.set_level(0);
-	ASSERT_EQ(0,stack.inspect(chrono::milliseconds{100}));
+	ASSERT_EQ(0,stack.set_level(0));
+	ASSERT_EQ(0,stack.inspect(chrono::milliseconds{10}));
+
+	ASSERT_EQ(1,stack.set_level(1));
+	ASSERT_EQ(1,stack.inspect(chrono::milliseconds{10}));
+
+	ASSERT_EQ(0,stack.set_level(0));
+	ASSERT_EQ(0,stack.inspect(chrono::milliseconds{10}));
 }
+
+TEST(test_task_batch_stack, two_tasks_in_single_batch) {
+	task_batch<int> batch;
+
+	testing_task_function task_function_1;
+	task_function_1.run_for = chrono::milliseconds{50};
+	batch.add(named_task<int>{"my_simple_task_1", ref(task_function_1)});
+
+	testing_task_function task_function_2;
+	task_function_2.run_for = chrono::milliseconds{50};
+	batch.add(named_task<int>{"my_simple_task_2", ref(task_function_2)});
+
+	task_batch_stack<int> stack;
+	stack.push_top(move(batch));
+
+	ASSERT_EQ(0,stack.inspect(chrono::milliseconds{10}));
+
+	ASSERT_EQ(1,stack.set_level(1));
+	ASSERT_EQ(1,stack.inspect(chrono::milliseconds{10}));
+
+	ASSERT_EQ(0,stack.set_level(0));
+	ASSERT_EQ(0,stack.inspect(chrono::milliseconds{10}));
+
+	ASSERT_EQ(1,stack.set_level(1));
+	ASSERT_EQ(1,stack.inspect(chrono::milliseconds{10}));
+
+	ASSERT_EQ(0,stack.set_level(0));
+	ASSERT_EQ(0,stack.inspect(chrono::milliseconds{10}));
+}
+
+TEST(test_task_batch_stack, two_tasks_in_two_batches) {
+	testing_task_function task_function_1;
+	task_function_1.run_for = chrono::milliseconds{100000};
+	task_batch<int> batch_1;
+	batch_1.add(named_task<int>{"my_simple_task_1", ref(task_function_1)});
+
+	testing_task_function task_function_2;
+	task_function_2.run_for = chrono::milliseconds{100000};
+	task_batch<int> batch_2;
+	batch_2.add(named_task<int>{"my_simple_task_2", ref(task_function_2)});
+
+	task_batch_stack<int> stack;
+	stack.push_top(move(batch_1));
+	stack.push_top(move(batch_2));
+
+	ASSERT_EQ(0,stack.inspect(chrono::milliseconds{10}));
+
+	ASSERT_EQ(1,stack.set_level(1));
+	ASSERT_EQ(1,stack.inspect(chrono::milliseconds{10}));
+
+	ASSERT_EQ(0,stack.set_level(0));
+	ASSERT_EQ(0,stack.inspect(chrono::milliseconds{10}));
+
+	ASSERT_EQ(2,stack.set_level(2));
+	ASSERT_EQ(2,stack.inspect(chrono::milliseconds{10}));
+
+	ASSERT_EQ(0,stack.set_level(0));
+	ASSERT_EQ(0,stack.inspect(chrono::milliseconds{10}));
+}
+

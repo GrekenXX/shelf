@@ -55,6 +55,13 @@ TEST(test_task_batch, i_gave_you_a_simple_task) {
 		while(myNumber<=10) cond.wait_for(lock, chrono::seconds{5}, [&](){return myNumber>10;});
 	}
 	batch.stop(chrono::milliseconds{100});
+	myNumber = 0;
+	batch.start(chrono::milliseconds{100});
+	{
+		unique_lock<mutex> lock{mut};
+		while(myNumber<=10) cond.wait_for(lock, chrono::seconds{5}, [&](){return myNumber>10;});
+	}
+	batch.stop(chrono::milliseconds{100});
 
 	ASSERT_LE(10, myNumber);
 }
