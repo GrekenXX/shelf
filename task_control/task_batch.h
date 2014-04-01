@@ -44,6 +44,7 @@ namespace task_control {
 template<typename T>
 class task_batch {
 public:
+	typedef std::unique_ptr<named_task<T>> task_ptr_t;
 	typedef std::function<void(const named_task<T>&)> failure_reporter_t;
 
 	task_batch() { };
@@ -52,17 +53,17 @@ public:
 	task_batch& operator = (const task_batch&) = delete;
 
 
-	void add(named_task<T>&& task_func);
+	void add(task_ptr_t&& task_func);
 	void start(const std::chrono::milliseconds& max_wait, failure_reporter_t report=nullptr);
 	void stop(const std::chrono::milliseconds& max_wait, failure_reporter_t report=nullptr);
 	void inspect(const std::chrono::milliseconds& max_wait, failure_reporter_t report) const;
 
 private:
-	std::list<named_task<T>> tasks_;
+	std::list<task_ptr_t> tasks_;
 };
 
 template<typename T>
-void task_batch<T>::add(named_task<T>&& task_func) {
+void task_batch<T>::add(task_ptr_t&& task_func) {
 	tasks_.emplace_back(std::move(task_func));
 }
 
@@ -70,7 +71,7 @@ template<typename T>
 void task_batch<T>::start(const std::chrono::milliseconds& max_wait, failure_reporter_t report) {
 	std::map<named_task<T>*, std::future<bool>> spawned_tasks;
 	for(auto& task : tasks_)
-		spawned_tasks[&task] = task.start();
+		spawned_tasks[task.get()] = task->start();
 
 	auto deadline = std::chrono::system_clock::now() + max_wait;
 	for(auto& spawned_task : spawned_tasks) {
@@ -85,7 +86,7 @@ template<typename T>
 void task_batch<T>::stop(const std::chrono::milliseconds& max_wait, failure_reporter_t report) {
 	std::map<named_task<T>*, std::future<int>> stopped_tasks;
 	for(auto& task : tasks_)
-		stopped_tasks[&task] = task.stop();
+		stopped_tasks[task.get()] = task->stop();
 
 	auto deadline = std::chrono::system_clock::now() + max_wait;
 	for(auto& stopped_task : stopped_tasks) {
@@ -99,8 +100,8 @@ void task_batch<T>::stop(const std::chrono::milliseconds& max_wait, failure_repo
 template<typename T>
 void task_batch<T>::inspect(const std::chrono::milliseconds& max_wait, failure_reporter_t report) const {
 	for(const auto& task : tasks_) {
-		if(!task.still_running(max_wait))
-			report(task);
+		if(!task->still_running(max_wait))
+			report(*task);
 	}
 }
 

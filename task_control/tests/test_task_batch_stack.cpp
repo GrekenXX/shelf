@@ -42,7 +42,7 @@ TEST(test_task_batch_stack, single_task_in_single_batch) {
 	task_function.run_for = chrono::milliseconds{50};
 
 	task_batch<int> batch;
-	batch.add(named_task<int>{"my_simple_task", ref(task_function)});
+	batch.add(unique_ptr<named_task<int>>{new named_task<int>{"my_simple_task", ref(task_function)}});
 
 	task_batch_stack<int> stack;
 	stack.push_top(move(batch));
@@ -67,11 +67,11 @@ TEST(test_task_batch_stack, two_tasks_in_single_batch) {
 
 	testing_task_function task_function_1;
 	task_function_1.run_for = chrono::milliseconds{50};
-	batch.add(named_task<int>{"my_simple_task_1", ref(task_function_1)});
+	batch.add(unique_ptr<named_task<int>>{new named_task<int>{"my_simple_task_1", ref(task_function_1)}});
 
 	testing_task_function task_function_2;
 	task_function_2.run_for = chrono::milliseconds{50};
-	batch.add(named_task<int>{"my_simple_task_2", ref(task_function_2)});
+	batch.add(unique_ptr<named_task<int>>{new named_task<int>{"my_simple_task_2", ref(task_function_2)}});
 
 	task_batch_stack<int> stack;
 	stack.push_top(move(batch));
@@ -95,12 +95,12 @@ TEST(test_task_batch_stack, two_tasks_in_two_batches) {
 	testing_task_function task_function_1;
 	task_function_1.run_for = chrono::milliseconds{100000};
 	task_batch<int> batch_1;
-	batch_1.add(named_task<int>{"my_simple_task_1", ref(task_function_1)});
+	batch_1.add(unique_ptr<named_task<int>>{new named_task<int>{"my_simple_task_1", ref(task_function_1)}});
 
 	testing_task_function task_function_2;
 	task_function_2.run_for = chrono::milliseconds{100000};
 	task_batch<int> batch_2;
-	batch_2.add(named_task<int>{"my_simple_task_2", ref(task_function_2)});
+	batch_2.add(unique_ptr<named_task<int>>{new named_task<int>{"my_simple_task_2", ref(task_function_2)}});
 
 	task_batch_stack<int> stack;
 	stack.push_top(move(batch_1));

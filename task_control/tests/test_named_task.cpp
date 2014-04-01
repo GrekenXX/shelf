@@ -107,6 +107,8 @@ TEST_F(test_named_task, stop_timeout) {
 
 	auto task_result = task.stop();
 	ASSERT_EQ(future_status::timeout, task_result.wait_for(stop_wait));
+
+	task_function.timeout_stop = false;
 }
 
 TEST_F(test_named_task, still_running_true) {
@@ -136,15 +138,15 @@ TEST_F(test_named_task, still_running_false) {
 TEST_F(test_named_task, stop_and_restart) {
 	task_function.succeed_start = true;
 	task_function.timeout_stop = false;
-	task_function.run_for = std::chrono::seconds{100};
-	auto init_result = task.start();
-	ASSERT_TRUE(init_result.get());
+	task_function.run_for = std::chrono::seconds{10};
+	auto init_result_1 = task.start();
+	ASSERT_TRUE(init_result_1.get());
 
 	auto task_result = task.stop();
 	ASSERT_EQ(future_status::ready, task_result.wait_for(stop_wait));
 
-	init_result = task.start();
-	ASSERT_TRUE(init_result.get());
+	auto init_result_2 = task.start();
+	ASSERT_TRUE(init_result_2.get());
 
 	task_result = task.stop();
 	ASSERT_EQ(future_status::ready, task_result.wait_for(stop_wait));
