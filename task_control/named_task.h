@@ -70,7 +70,6 @@ private:
 	std::future<T> result_;
 	std::thread thread_;
 	std::promise<bool> init_result_;
-	std::mutex mutex_;
 	bool shutdown_;
 };
 
@@ -83,7 +82,6 @@ named_task<T>::named_task(const std::string& name, task_function_t task)
 
 template<typename T>
 named_task<T>::~named_task() {
-	std::lock_guard<std::mutex> lock{mutex_};
 	if (!shutdown_)
 		stop();
 	if(thread_.joinable())
@@ -100,11 +98,13 @@ std::future<bool> named_task<T>::start() {
 	if (shutdown_ && thread_.joinable())
 		thread_.join();
 
+	shutdown_ = false;
+
 	init_result_ = std::promise<bool>{};
-	task_ = std::packaged_task<TASK_FUNC_SIG(T)>{task_function_};
+	task_ = std::packaged_task<TASK_FUNC_SIG(T)>{std::ref(task_function_)};
 	result_ = task_.get_future();
-	auto init_callback = [&](bool success) { std::lock_guard<std::mutex> lock{mutex_}; init_result_.set_value(success); };
-	thread_ = std::thread{std::move(task_), std::move(init_callback), std::ref(shutdown_)};
+	auto init_callback = [&](bool success) { init_result_.set_value(success); };
+	thread_ = std::thread{std::move(task_), init_callback, std::ref(shutdown_)};
 	return init_result_.get_future();
 }
 

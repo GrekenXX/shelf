@@ -44,6 +44,8 @@ struct testing_task_function {
 		return_value{0},
 		run_for{50000},
 		repetitive_task{[]{}},
+		pre_lock{[]{}},
+		post_lock{[]{}},
 		force_stop_{false},
 		loop_mutex_{} {
 	}
@@ -56,7 +58,9 @@ struct testing_task_function {
 	}
 
 	int operator () (task_control::named_task<int>::init_callback_t cb, const bool& stop) {
+		pre_lock();
 		std::lock_guard<std::mutex> lock(loop_mutex_);
+		post_lock();
 		if(!timeout_start)
 			cb(succeed_start);
 		if(succeed_start) {
@@ -77,6 +81,8 @@ struct testing_task_function {
 	int return_value;
 	std::chrono::microseconds run_for;
 	std::function<void()> repetitive_task;
+	std::function<void()> pre_lock;
+	std::function<void()> post_lock;
 private:
 	bool force_stop_;
 	std::mutex loop_mutex_;

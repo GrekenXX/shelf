@@ -121,3 +121,40 @@ TEST(test_task_batch_stack, two_tasks_in_two_batches) {
 	ASSERT_EQ(0,stack.inspect(chrono::milliseconds{10}));
 }
 
+TEST(test_task_batch_stack, six_tasks_in_three_batches) {
+	vector<testing_task_function> task_functions{6};
+	for(auto& task_function : task_functions)
+		task_function.run_for = chrono::milliseconds{100000};
+
+	vector<task_batch<int>> batches{3};
+	for(int i=0; i<3; ++i) {
+		batches[i].add(unique_ptr<named_task<int>>{new named_task<int>{"my_simple_task_" + to_string(2*i), ref(task_functions[2*i])}});
+		batches[i].add(unique_ptr<named_task<int>>{new named_task<int>{"my_simple_task_" + to_string(2*i+1), ref(task_functions[2*i+1])}});
+	}
+
+	task_batch_stack<int> stack;
+	stack.push_top(move(batches[0]));
+	stack.push_top(move(batches[1]));
+	stack.push_top(move(batches[2]));
+
+	ASSERT_EQ(0,stack.inspect(chrono::milliseconds{10}));
+
+	ASSERT_EQ(1,stack.set_level(1));
+	ASSERT_EQ(1,stack.inspect(chrono::milliseconds{10}));
+
+	ASSERT_EQ(0,stack.set_level(0));
+	ASSERT_EQ(0,stack.inspect(chrono::milliseconds{10}));
+
+	ASSERT_EQ(2,stack.set_level(2));
+	ASSERT_EQ(2,stack.inspect(chrono::milliseconds{10}));
+
+	ASSERT_EQ(0,stack.set_level(0));
+	ASSERT_EQ(0,stack.inspect(chrono::milliseconds{10}));
+
+	ASSERT_EQ(3,stack.set_level(3));
+	ASSERT_EQ(3,stack.inspect(chrono::milliseconds{10}));
+
+	ASSERT_EQ(0,stack.set_level(0));
+	ASSERT_EQ(0,stack.inspect(chrono::milliseconds{10}));
+}
+
