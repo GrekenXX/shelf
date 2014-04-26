@@ -1,5 +1,5 @@
 /*
- * named_task.h
+ * named_task.cpp
  *
  *  Created on: Mar 29, 2014
  *      Author: Georgios Dimitriadis
@@ -24,49 +24,51 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
+#include <task_control/named_task.h>
 
-#ifndef NAMED_TASK_H_
-#define NAMED_TASK_H_
+using namespace task_control;
+using namespace std;
 
-#include <functional>
-#include <future>
-#include <string>
-#include <thread>
+named_task::named_task(const string& name, task_function_t task)
+	: name_{name},
+	  task_function_{task},
+	  shutdown_{false} {
+}
 
-#include <iostream>
+named_task::~named_task() {
+	if (!shutdown_)
+		stop();
+	if(thread_.joinable())
+		thread_.join();
+}
 
-#define TASK_FUNC_SIG void (typename task_control::named_task::init_callback_t,const bool&)
+const string& named_task::name() const {
+	return name_;
+}
 
-namespace task_control {
+future<bool> named_task::start() {
+	if (shutdown_ && thread_.joinable())
+		thread_.join();
 
-class named_task {
-public:
-	typedef std::function<void(bool)> init_callback_t;
-	typedef std::function<void (init_callback_t,const bool&)> task_function_t;
+	shutdown_ = false;
 
-	named_task(const std::string& name, task_function_t task);
-	named_task() = delete;
-	named_task(const named_task&) = delete;
-	named_task(named_task&& original) = delete;
-	named_task& operator = (const named_task&) = delete;
+	init_result_ = promise<bool>{};
+	task_ = packaged_task<void (init_callback_t,const bool&)>{ref(task_function_)};
+	result_ = task_.get_future();
+	auto init_callback = [&](bool success) { init_result_.set_value(success); };
+	thread_ = thread{move(task_), init_callback, ref(shutdown_)};
+	return init_result_.get_future();
+}
 
-	~named_task();
+future<void> named_task::stop() {
+	shutdown_ = true;
+	return move(result_);
+}
 
-	const std::string& name() const;
-	std::future<bool> start();
-	std::future<void> stop();
-	bool still_running(const std::chrono::milliseconds& max_wait_time) const;
+bool named_task::still_running(const chrono::milliseconds& max_wait_time) const {
+	return (result_.wait_for(max_wait_time) == future_status::timeout);
+}
 
-private:
-	std::string name_;
-	std::function<void (init_callback_t,const bool&)> task_function_;
-	std::packaged_task<void (init_callback_t,const bool&)> task_;
-	std::future<void> result_;
-	std::thread thread_;
-	std::promise<bool> init_result_;
-	bool shutdown_;
-};
 
-} /* namespace task_control */
 
-#endif /* NAMED_TASK_H_ */
+

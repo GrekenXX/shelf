@@ -38,8 +38,8 @@ using namespace task_control;
 struct test_named_task : ::testing::Test {
 	test_named_task() :
 		task_function{},
-		init_callback_wait{1000},
-		stop_wait{1000},
+		init_callback_wait{10000},
+		stop_wait{10000},
 		task{"my_named_task", ref(task_function)} {
 	}
 
@@ -48,7 +48,7 @@ struct test_named_task : ::testing::Test {
 	chrono::microseconds init_callback_wait;
 	chrono::microseconds stop_wait;
 
-	named_task<int> task;
+	named_task task;
 };
 
 TEST_F(test_named_task, construct) {
@@ -83,6 +83,17 @@ TEST_F(test_named_task, start_timeout_with_run) {
 	ASSERT_EQ(future_status::timeout , init_result.wait_for(init_callback_wait));
 }
 
+TEST_F(test_named_task, exception_mid_run) {
+	task_function.repetitive_task = [] () { throw "WTF"; };
+	auto init_result = task.start();
+	ASSERT_EQ(future_status::ready , init_result.wait_for(init_callback_wait));
+	ASSERT_EQ(true, init_result.get());
+
+	auto task_result = task.stop();
+	ASSERT_EQ(future_status::ready, task_result.wait_for(stop_wait));
+	ASSERT_ANY_THROW(task_result.get());
+}
+
 TEST_F(test_named_task, stop_successful) {
 	task_function.succeed_start = true;
 	task_function.timeout_stop = false;
@@ -91,7 +102,19 @@ TEST_F(test_named_task, stop_successful) {
 
 	auto task_result = task.stop();
 	ASSERT_EQ(future_status::ready, task_result.wait_for(stop_wait));
-	ASSERT_EQ(task_function.return_value, task_result.get());
+	ASSERT_NO_THROW(task_result.get());
+}
+
+TEST_F(test_named_task, get_thrown_exception) {
+	task_function.succeed_start = true;
+	task_function.timeout_stop = false;
+	task_function.throw_on_exit = true;
+	auto init_result = task.start();
+	ASSERT_TRUE(init_result.get());
+
+	auto task_result = task.stop();
+	ASSERT_EQ(future_status::ready, task_result.wait_for(stop_wait));
+	ASSERT_ANY_THROW(task_result.get());
 }
 
 TEST_F(test_named_task, stop_timeout) {
