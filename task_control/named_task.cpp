@@ -31,8 +31,16 @@ using namespace std;
 
 named_task::named_task(const string& name, task_function_t task)
 	: name_{name},
-	  task_function_{task},
-	  shutdown_{false} {
+	  shutdown_{false}
+{
+	  task_function_ = [task] (init_callback_t init_callback, const bool& stop, promise<void>& result) {
+	  		try {
+	  			task(init_callback, stop);
+	  			result.set_value();
+	  		} catch (...) {
+	  			result.set_exception(current_exception());
+	  		}
+	  	};
 }
 
 named_task::~named_task() {
@@ -51,22 +59,22 @@ future<bool> named_task::start() {
 		thread_.join();
 
 	shutdown_ = false;
-
 	init_result_ = promise<bool>{};
-	task_ = packaged_task<void (init_callback_t,const bool&)>{ref(task_function_)};
-	result_ = task_.get_future();
 	auto init_callback = [&](bool success) { init_result_.set_value(success); };
-	thread_ = thread{move(task_), init_callback, ref(shutdown_)};
+	result_promise_ = promise<void>{};
+	result_future_ = result_promise_.get_future();
+	thread_ = thread{ref(task_function_), init_callback, ref(shutdown_), ref(result_promise_)};
+
 	return init_result_.get_future();
 }
 
 future<void> named_task::stop() {
 	shutdown_ = true;
-	return move(result_);
+	return move(result_future_);
 }
 
 bool named_task::still_running(const chrono::milliseconds& max_wait_time) const {
-	return (result_.wait_for(max_wait_time) == future_status::timeout);
+	return (result_future_.wait_for(max_wait_time) == future_status::timeout);
 }
 
 

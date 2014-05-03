@@ -84,7 +84,11 @@ TEST_F(test_named_task, start_timeout_with_run) {
 }
 
 TEST_F(test_named_task, exception_mid_run) {
-	task_function.repetitive_task = [] () { throw "WTF"; };
+	task_function.lap_callback = [] (int lap) {
+		if (lap == 3)
+		throw "WTF";
+	};
+	task_function.min_laps = 4;
 	auto init_result = task.start();
 	ASSERT_EQ(future_status::ready , init_result.wait_for(init_callback_wait));
 	ASSERT_EQ(true, init_result.get());
@@ -157,6 +161,7 @@ TEST_F(test_named_task, stop_and_restart) {
 	task_function.succeed_start = true;
 	task_function.timeout_stop = false;
 	task_function.run_for = std::chrono::seconds{10};
+	task_function.min_laps = 3;
 	auto init_result_1 = task.start();
 	ASSERT_TRUE(init_result_1.get());
 
@@ -169,3 +174,4 @@ TEST_F(test_named_task, stop_and_restart) {
 	task_result = task.stop();
 	ASSERT_EQ(future_status::ready, task_result.wait_for(stop_wait));
 }
+

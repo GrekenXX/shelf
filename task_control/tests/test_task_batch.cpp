@@ -35,30 +35,31 @@ using namespace std;
 TEST(test_task_batch, i_gave_you_a_simple_task) {
 	task_batch batch;
 	testing_task_function task_function;
-	int myNumber{0};
+	int lap_ctr{0};
 	mutex mut;
 	condition_variable cond;
-	task_function.repetitive_task = [&]() {
+	task_function.lap_callback = [&](int lap) {
 		lock_guard<mutex> lock{mut};
-		if(++myNumber > 10) cond.notify_one();
+		lap_ctr = lap;
+		if(lap_ctr > 10) cond.notify_one();
 	};
 
 	batch.add(unique_ptr<named_task>{new named_task{"my_simple_task", ref(task_function)}});
 	batch.start(chrono::milliseconds{100});
 	{
 		unique_lock<mutex> lock{mut};
-		while(myNumber<=10) cond.wait_for(lock, chrono::seconds{5}, [&](){return myNumber>10;});
+		while(lap_ctr<=10) cond.wait_for(lock, chrono::seconds{5}, [&](){return lap_ctr>10;});
 	}
 	batch.stop(chrono::milliseconds{100});
-	myNumber = 0;
+	lap_ctr = 0;
 	batch.start(chrono::milliseconds{100});
 	{
 		unique_lock<mutex> lock{mut};
-		while(myNumber<=10) cond.wait_for(lock, chrono::seconds{5}, [&](){return myNumber>10;});
+		while(lap_ctr<=10) cond.wait_for(lock, chrono::seconds{5}, [&](){return lap_ctr>10;});
 	}
 	batch.stop(chrono::milliseconds{100});
 
-	ASSERT_LE(10, myNumber);
+	ASSERT_LE(10, lap_ctr);
 }
 
 TEST(test_task_batch, i_gave_you_two_simple_tasks) {
@@ -68,7 +69,7 @@ TEST(test_task_batch, i_gave_you_two_simple_tasks) {
 	int myNumber1{0};
 	mutex mut1;
 	condition_variable cond1;
-	task_function_1.repetitive_task = [&]() {
+	task_function_1.lap_callback = [&](int) {
 		lock_guard<mutex> lock{mut1};
 		if(++myNumber1 > 10) cond1.notify_one();
 	};
@@ -78,7 +79,7 @@ TEST(test_task_batch, i_gave_you_two_simple_tasks) {
 	int myNumber2{0};
 	mutex mut2;
 	condition_variable cond2;
-	task_function_2.repetitive_task = [&]() {
+	task_function_2.lap_callback = [&](int) {
 		lock_guard<mutex> lock{mut2};
 		if(++myNumber2 > 10) cond2.notify_one();
 	};

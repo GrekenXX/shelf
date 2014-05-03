@@ -38,7 +38,8 @@ struct testing_task_function {
 		timeout_stop{false},
 		throw_on_exit{false},
 		run_for{50000},
-		repetitive_task{[]{}},
+		min_laps{0},
+		lap_callback{[](int){}},
 		pre_lock{[]{}},
 		post_lock{[]{}},
 		force_stop_{false},
@@ -60,10 +61,12 @@ struct testing_task_function {
 			cb(succeed_start);
 		if(succeed_start) {
 			auto exit_time = std::chrono::system_clock::now() + run_for;
-			while((std::chrono::system_clock::now()<exit_time && !stop) || timeout_stop) {
+			int nLaps = 0;
+			while((nLaps < min_laps) || (std::chrono::system_clock::now()<exit_time && !stop) || timeout_stop) {
+				++nLaps;
 				if(force_stop_)
 					break;
-				repetitive_task();
+				lap_callback(nLaps);
 				std::this_thread::sleep_for(std::chrono::microseconds{5});
 			}
 		}
@@ -76,7 +79,8 @@ struct testing_task_function {
 	bool timeout_stop;
 	bool throw_on_exit;
 	std::chrono::microseconds run_for;
-	std::function<void()> repetitive_task;
+	int min_laps;
+	std::function<void(int lap)> lap_callback;
 	std::function<void()> pre_lock;
 	std::function<void()> post_lock;
 private:

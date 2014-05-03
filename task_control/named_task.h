@@ -59,9 +59,9 @@ public:
 
 private:
 	std::string name_;
-	std::function<void (init_callback_t,const bool&)> task_function_;
-	std::packaged_task<void (init_callback_t,const bool&)> task_;
-	std::future<void> result_;
+	std::function<void (init_callback_t,const bool&, std::promise<void>&)> task_function_;
+	std::promise<void> result_promise_;
+	std::future<void> result_future_;
 	std::thread thread_;
 	std::promise<bool> init_result_;
 	bool shutdown_;
