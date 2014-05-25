@@ -29,8 +29,13 @@
 #include <string>
 #include <mutex>
 #include <chrono>
+#include <sstream>
+#include <typeindex>
+#include <unordered_map>
+#include <boost/optional.hpp>
+#include <boost/any.hpp>
 
-namespace logging {
+namespace elf {
 
 /**
  * These values conform to syslog.
@@ -48,31 +53,144 @@ enum Severity {
 
 #define LEVEL_STR(level) #level
 
+std::string to_string(Severity severity);
+
+typedef wchar_t log_char;
+typedef std::basic_string<log_char> logstring;
+typedef std::chrono::time_point<std::chrono::high_resolution_clock> logtime;
+
+template<typename T>
+struct is_char_literal{ static const bool value = false; };
+#define SET_IS_CHAR(TYPE) template<> struct is_char_literal<TYPE>{ static const bool value = true; };
+#define IF_IS_CHAR(TYPE, RET) typename std::enable_if<is_char_literal<TYPE>::value, RET>::type
+#define IF_IS_NOT_CHAR(TYPE, RET) typename std::enable_if<!is_char_literal<TYPE>::value, RET>::type
+
+SET_IS_CHAR(char)
+SET_IS_CHAR(wchar_t)
+SET_IS_CHAR(char16_t)
+SET_IS_CHAR(char32_t)
+
+template<typename T>
+struct logstring_cast {
+	static logstring cast(const T& t) {
+		std::basic_ostringstream<log_char> oss;
+		oss << t;
+		return oss.str();
+	}
+};
+
+template<typename CharT>
+struct logstring_cast<std::basic_string<CharT>> {
+	static logstring cast(const std::basic_string<CharT>& str) {
+		return logstring{std::begin(str), std::end(str)};
+	}
+};
+
+template<typename CharT, std::size_t N>
+struct logstring_cast<CharT[N]> {
+	static IF_IS_CHAR(CharT, logstring) cast(const CharT* str) {
+		return logstring{str, str + N - 1};
+	}
+};
+
+template<>
+struct logstring_cast<logstring> {
+	static logstring cast(const logstring& str) {
+		return str;
+	}
+};
+
+template<typename T>
+static logstring to_logstring(const T& t) {
+	typedef typename std::remove_reference<typename std::remove_cv<T>::type>::type clean_type;
+	return logstring_cast<clean_type>::cast(t);
+}
+
 struct LogEntry {
+	struct Location {
+		std::string file;
+		std::string function;
+		int line;
+	};
+
 	LogEntry() :
-		severity(DEBUG), time(std::chrono::high_resolution_clock::now()) {
+		severity{DEBUG},
+		time{std::chrono::high_resolution_clock::now()}
+	{
+	}
+
+	template<typename KeyTag, typename T>
+	void set(const T& t) { _custom_data[typeid(KeyTag)] = t; }
+
+	template<typename KeyTag, typename T>
+	bool get(T& t) {
+		auto it = _custom_data.find(typeid(KeyTag));
+		if (it!=_custom_data.end() && it->second.type()==typeid(T)) {
+			t = boost::any_cast<T>(it->second);
+			return true;
+		}
+
+		return false;
+	}
+
+	template<typename KeyTag>
+	bool contains() {
+		return (_custom_data.find(typeid(KeyTag)) != _custom_data.end());
 	}
 
 	Severity severity;
-	std::chrono::time_point<std::chrono::high_resolution_clock> time;
-	std::string message;
+	logtime time;
+	std::string facility;
+	Location location;
+	logstring message;
+
+private:
+	std::unordered_map<std::type_index, boost::any> _custom_data;
 };
+
+//struct LogEntry {
+//	template<typename T>
+//	void set_data(const std::string& key, const T& value) {
+//		auto keyIt = std::find(std::begin(_keys), std::end(_keys), key);
+//		if (keyIt != std::end(_keys)) {
+//			_values[keyIt - std::begin(_keys)] = to_logstring(value);
+//		} else {
+//			_keys.push_back(key);
+//			_values.push_back(to_logstring(value));
+//		}
+//	}
+//
+//	boost::optional<const logstring&> get_data(const std::string& key) {
+//		auto keyIt = std::find(std::begin(_keys), std::end(_keys), key);
+//		if (keyIt != std::end(_keys))
+//			return _values[keyIt - std::begin(_keys)];
+//
+//		return {};
+//	}
+//
+//	Severity severity;
+//	std::string facility;
+//	logtime time;
+//	logstring message;
+//
+//private:
+//	std::vector<std::string> _keys;
+//	std::vector<logstring> _values;
+//};
 
 class ILog {
 public:
-	ILog(Severity maxSeverity=logging::INFO) : _maxSeverity(maxSeverity) { }
+	ILog(Severity maxSeverity=elf::INFO) : _maxSeverity(maxSeverity) { }
 	virtual ~ILog() { }
 
 	Severity getMaxSeverity() const;
 	void setMaxSeverity(Severity maxSeverity);
 
-	void addEntry(const std::string& facility, const LogEntry& entry);
+	void addEntry(const LogEntry& entry);
 	virtual void flush() = 0;
 
-	static std::string toString(Severity severity);
-
 protected:
-	virtual void addEntryImpl(const std::string& facility, const LogEntry& entry) = 0;
+	virtual void addEntryImpl(const LogEntry& entry) = 0;
 
 private:
 	Severity _maxSeverity;

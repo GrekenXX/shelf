@@ -29,11 +29,11 @@
 #include "ILog.h"
 #include <syslog.h>
 
-namespace logging {
+namespace elf {
 
 class SysLog : public ILog {
 public:
-	SysLog(const std::string& ident, Severity maxSeverity=logging::INFO) : ILog(maxSeverity) {
+	SysLog(const std::string& ident, Severity maxSeverity=elf::INFO) : ILog(maxSeverity) {
 		openlog(ident.c_str(), LOG_NDELAY|LOG_PID, LOG_DAEMON);
 	}
 
@@ -42,12 +42,20 @@ public:
 	virtual void flush() { };
 
 protected:
-	void addEntryImpl(const std::string& facility, const LogEntry& entry) {
+	void addEntryImpl(const LogEntry& entry) {
 		typedef std::chrono::seconds secs_t;
 		typedef std::chrono::milliseconds millis_t;
 		int64_t secs = std::chrono::duration_cast<secs_t>(entry.time.time_since_epoch()).count();
-		int64_t millis = std::chrono::duration_cast<millis_t>(entry.time.time_since_epoch()).count();
-		syslog(entry.severity, "|%lu.%06lu|%s|%s|%s", secs, millis, facility.c_str(), toString(entry.severity).c_str(), entry.message.c_str());
+		int64_t millis = std::chrono::duration_cast<millis_t>(entry.time.time_since_epoch()).count() - 1000*secs;
+		syslog(
+				entry.severity,
+				"|%lu.%06lu|%s|%s|%s",
+				secs,
+				millis,
+				entry.facility.c_str(),
+				to_string(entry.severity).c_str(),
+				entry.message.c_str()
+				);
 	}
 
 };

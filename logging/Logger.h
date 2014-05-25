@@ -33,28 +33,28 @@
 #include <map>
 #include <list>
 #include <sstream>
+#include <type_traits>
 
-namespace logging {
+namespace elf {
 
 class Logger {
 	template<typename T>
-	struct LogWriter {
-		static void write(Logger& logger, LogEntry& entry, const T& data);
-	};
+	struct LogWriter
+	{ static void write(Logger& logger, LogEntry& entry, const T& data); };
 
 public:
-	typedef Logger& (manipulator_t)(Logger&);
-	friend Logger& end_entry(Logger&);
+	typedef std::function<Logger&(Logger&,LogEntry&)> manipulator_t;
+	typedef Logger& (manipulator_sig_t)(Logger&, LogEntry&);
 
-	Logger(ILog& log, const std::string& facility, Severity defaultSeverity=logging::INFO);
+	Logger(ILog& log, const std::string& facility, Severity defaultSeverity=elf::INFO);
 
 	template<typename InputIterator>
 	Logger(InputIterator logsBegin, InputIterator logsEnd,
-			const std::string& facility, Severity defaultSeverity=logging::INFO)
+			const std::string& facility, Severity defaultSeverity=elf::INFO)
 				: _logs(logsBegin, logsEnd), _facility(facility), _defaultSeverity(defaultSeverity) {
 	}
 
-	Logger(const std::string& facility, Severity defaultSeverity=logging::INFO);
+	Logger(const std::string& facility, Severity defaultSeverity=elf::INFO);
 
 	Logger(const Logger& logger);
 
@@ -69,6 +69,7 @@ public:
 			} else {
 				entry = &(_currentEntries[std::this_thread::get_id()]);
 				entry->severity = _defaultSeverity;
+				entry->facility = _facility;
 			}
 		}
 		LogWriter<T>::write(*this, *entry, data);
@@ -80,6 +81,7 @@ public:
 	void addLog(ILog& log);
 	void removeLog(ILog& log);
 	const std::list<ILog*>& getLogs() const;
+	void flush();
 
 private:
 	Logger& operator=(const Logger&);
@@ -92,28 +94,33 @@ private:
 	std::mutex _currentEntryMutex;
 	std::map<std::thread::id, LogEntry> _currentEntries;
 
-	void flush();
 };
-
-Logger& end_entry(Logger&);
 
 // Default behavior: append data to message
 template<typename T>
 inline void Logger::LogWriter<T>::write(Logger& logger, LogEntry& entry, const T& data) {
-	std::ostringstream oss;
-	oss << data;
-	entry.message += oss.str();
+	entry.message += to_logstring(data);
 }
 
 template<>
-inline void Logger::LogWriter<logging::Severity>::write(Logger& logger, LogEntry& entry, const logging::Severity& severity) {
+inline void Logger::LogWriter<elf::Severity>::write(Logger& logger, LogEntry& entry, const elf::Severity& severity) {
 	entry.severity = severity;
 }
 
 template<>
 inline void Logger::LogWriter<Logger::manipulator_t>::write(Logger& logger, LogEntry& entry, const Logger::manipulator_t& manipulator) {
-	manipulator(logger);
+	manipulator(logger, entry);
 }
+
+template<>
+inline void Logger::LogWriter<Logger::manipulator_sig_t>::write(Logger& logger, LogEntry& entry, const Logger::manipulator_sig_t& manipulator) {
+	manipulator(logger, entry);
+}
+
+Logger& end_entry(Logger&, LogEntry&);
+std::function<Logger&(Logger&, LogEntry&)> file(const std::string& _file);
+std::function<Logger&(Logger&, LogEntry&)> line(int _line);
+std::function<Logger&(Logger&, LogEntry&)> func(const std::string& _func);
 
 }
 

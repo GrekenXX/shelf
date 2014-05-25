@@ -29,11 +29,32 @@
 #include <algorithm>
 
 using namespace std;
-using namespace logging;
+using namespace elf;
 
-Logger& logging::end_entry(Logger& logger) {
+Logger& elf::end_entry(Logger& logger, LogEntry& entry) {
 	logger.flush();
 	return logger;
+}
+
+function<Logger&(Logger&, LogEntry&)> elf::file(const string& _file) {
+	return [&] (Logger& logger, LogEntry& entry) -> Logger& {
+		entry.location.file = _file;
+		return logger;
+	};
+}
+
+function<Logger&(Logger&, LogEntry&)> elf::line(int _line) {
+	return [=] (Logger& logger, LogEntry& entry) -> Logger& {
+		entry.location.line = _line;
+		return logger;
+	};
+}
+
+function<Logger&(Logger&, LogEntry&)> elf::func(const string& _func) {
+	return [&] (Logger& logger, LogEntry& entry) -> Logger& {
+		entry.location.function = _func;
+		return logger;
+	};
 }
 
 Logger::Logger(ILog& log, const string& facility, Severity defaultSeverity)
@@ -52,17 +73,17 @@ Logger::Logger(const Logger& logger) :
 	_defaultSeverity(logger._defaultSeverity) {
 }
 
-Logger Logger::duplicate(const std::string& facility) const {
+Logger Logger::duplicate(const string& facility) const {
 	return Logger(_logs.begin(), _logs.end(), facility, _defaultSeverity);
 }
 
 void Logger::addLog(ILog& log) {
-	if(std::find(_logs.begin(), _logs.end(), &log)==_logs.end())
+	if(find(_logs.begin(), _logs.end(), &log)==_logs.end())
 		_logs.push_back(&log);
 }
 
 void Logger::removeLog(ILog& log) {
-	_logs.erase(std::find(_logs.begin(), _logs.end(), &log));
+	_logs.erase(find(_logs.begin(), _logs.end(), &log));
 }
 
 const std::list<ILog*>& Logger::getLogs() const {
@@ -70,12 +91,12 @@ const std::list<ILog*>& Logger::getLogs() const {
 }
 
 void Logger::flush() {
-	std::lock_guard<std::mutex> lock_current_entry(_currentEntryMutex);
-	map<std::thread::id, LogEntry>::iterator entryIt = _currentEntries.find(std::this_thread::get_id());
+	lock_guard<mutex> lock_current_entry(_currentEntryMutex);
+	map<thread::id, LogEntry>::iterator entryIt = _currentEntries.find(this_thread::get_id());
 	if(entryIt!=_currentEntries.end()) {
 		LogEntry& entry = entryIt->second;
 		for(auto log : _logs)
-			log->addEntry(_facility, entry);
+			log->addEntry(entry);
 
 		_currentEntries.erase(entryIt);
 	}
