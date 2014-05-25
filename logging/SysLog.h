@@ -39,16 +39,18 @@ public:
 
 	~SysLog() { closelog(); }
 
-	virtual void flush() { };
+	void flush() override { };
 
 protected:
-	void addEntryImpl(const LogEntry& entry) {
+	void addEntry(const Entry& entry) override {
 		typedef std::chrono::seconds secs_t;
 		typedef std::chrono::milliseconds millis_t;
 		int64_t secs = std::chrono::duration_cast<secs_t>(entry.time.time_since_epoch()).count();
 		int64_t millis = std::chrono::duration_cast<millis_t>(entry.time.time_since_epoch()).count() - 1000*secs;
+
+		auto facility_priority = LOG_MAKEPRI(LOG_USER, LOG_ERR);
 		syslog(
-				entry.severity,
+				LOG_MAKEPRI(LOG_USER, sev2pri(entry.severity)),
 				"|%lu.%06lu|%s|%s|%s",
 				secs,
 				millis,
@@ -56,6 +58,19 @@ protected:
 				to_string(entry.severity).c_str(),
 				entry.message.c_str()
 				);
+	}
+
+	static int sev2pri(Severity severity) {
+		switch(severity) {
+		case EMERGENCY:	return LOG_EMERG;
+		case ALERT:		return LOG_ALERT;
+		case CRITICAL:	return LOG_CRIT;
+		case ERROR:		return LOG_ERR;
+		case WARNING:	return LOG_WARNING;
+		case NOTICE:	return LOG_NOTICE;
+		case INFO:		return LOG_INFO;
+		case DEBUG:		return LOG_DEBUG;
+		}
 	}
 
 };

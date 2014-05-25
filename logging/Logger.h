@@ -40,11 +40,11 @@ namespace elf {
 class Logger {
 	template<typename T>
 	struct LogWriter
-	{ static void write(Logger& logger, LogEntry& entry, const T& data); };
+	{ static void write(Logger& logger, Entry& entry, const T& data); };
 
 public:
-	typedef std::function<Logger&(Logger&,LogEntry&)> manipulator_t;
-	typedef Logger& (manipulator_sig_t)(Logger&, LogEntry&);
+	typedef std::function<Logger&(Logger&,Entry&)> manipulator_t;
+	typedef Logger& (manipulator_sig_t)(Logger&, Entry&);
 
 	Logger(ILog& log, const std::string& facility, Severity defaultSeverity=elf::INFO);
 
@@ -60,10 +60,10 @@ public:
 
 	template<typename T>
 	Logger& operator<< (const T& data) {
-		LogEntry* entry = nullptr;
+		Entry* entry = nullptr;
 		{
 			std::lock_guard<std::mutex> lock(_currentEntryMutex);
-			std::map<std::thread::id, LogEntry>::iterator it = _currentEntries.find(std::this_thread::get_id());
+			std::map<std::thread::id, Entry>::iterator it = _currentEntries.find(std::this_thread::get_id());
 			if(it!=_currentEntries.end()) {
 				entry = &(_currentEntries[std::this_thread::get_id()]);
 			} else {
@@ -92,35 +92,35 @@ private:
 	const Severity _defaultSeverity;
 
 	std::mutex _currentEntryMutex;
-	std::map<std::thread::id, LogEntry> _currentEntries;
+	std::map<std::thread::id, Entry> _currentEntries;
 
 };
 
 // Default behavior: append data to message
 template<typename T>
-inline void Logger::LogWriter<T>::write(Logger& logger, LogEntry& entry, const T& data) {
+inline void Logger::LogWriter<T>::write(Logger& logger, Entry& entry, const T& data) {
 	entry.message += to_logstring(data);
 }
 
 template<>
-inline void Logger::LogWriter<elf::Severity>::write(Logger& logger, LogEntry& entry, const elf::Severity& severity) {
+inline void Logger::LogWriter<elf::Severity>::write(Logger& logger, Entry& entry, const elf::Severity& severity) {
 	entry.severity = severity;
 }
 
 template<>
-inline void Logger::LogWriter<Logger::manipulator_t>::write(Logger& logger, LogEntry& entry, const Logger::manipulator_t& manipulator) {
+inline void Logger::LogWriter<Logger::manipulator_t>::write(Logger& logger, Entry& entry, const Logger::manipulator_t& manipulator) {
 	manipulator(logger, entry);
 }
 
 template<>
-inline void Logger::LogWriter<Logger::manipulator_sig_t>::write(Logger& logger, LogEntry& entry, const Logger::manipulator_sig_t& manipulator) {
+inline void Logger::LogWriter<Logger::manipulator_sig_t>::write(Logger& logger, Entry& entry, const Logger::manipulator_sig_t& manipulator) {
 	manipulator(logger, entry);
 }
 
-Logger& end_entry(Logger&, LogEntry&);
-std::function<Logger&(Logger&, LogEntry&)> file(const std::string& _file);
-std::function<Logger&(Logger&, LogEntry&)> line(int _line);
-std::function<Logger&(Logger&, LogEntry&)> func(const std::string& _func);
+Logger& end_entry(Logger&, Entry&);
+std::function<Logger&(Logger&, Entry&)> file(const std::string& _file);
+std::function<Logger&(Logger&, Entry&)> line(int _line);
+std::function<Logger&(Logger&, Entry&)> func(const std::string& _func);
 
 }
 

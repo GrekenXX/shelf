@@ -41,166 +41,166 @@ ostream& operator << (ostream& os, const logstring& lstr) {
 
 BOOST_AUTO_TEST_SUITE(test_logger)
 
+struct TestLog : public ILog {
+	map<Severity, vector<Entry> > entries;
+
+	void flush() override { }
+protected:
+	void addEntry(const Entry& entry) override {
+		entries[entry.severity].push_back(entry);
+	}
+};
+
 struct foo { };
-function<Logger&(Logger&, LogEntry&)> set_foo(int fooVal) {
-	return [=] (Logger& l, LogEntry& e) -> Logger& {
+function<Logger&(Logger&, Entry&)> set_foo(int fooVal) {
+	return [=] (Logger& l, Entry& e) -> Logger& {
 		e.set<foo>(fooVal);
 		return l;
 	};
 }
 
 struct bar { };
-function<Logger&(Logger&, LogEntry&)> set_bar(const string& bar_val) {
-	return [=] (Logger& l, LogEntry& e) -> Logger& {
+function<Logger&(Logger&, Entry&)> set_bar(const string& bar_val) {
+	return [=] (Logger& l, Entry& e) -> Logger& {
 		e.set<bar>(bar_val);
 		return l;
 	};
 }
 
-struct TestLog : public ILog {
-	map<elf::Severity, vector<LogEntry> > entries;
-
-	virtual void flush() { }
-protected:
-	virtual void addEntryImpl(const LogEntry& entry) {
-		entries[entry.severity].push_back(entry);
-	}
-};
-
 int atoi(const logstring& str) {
 	int i = numeric_limits<int>::min();
-	basic_istringstream<elf::log_char> iss{str};
+	basic_istringstream<log_char> iss{str};
 	iss >> i;
 	return i;
 }
 
 BOOST_AUTO_TEST_CASE(no_entry_on_high_level) {
 	TestLog testLog;
-	testLog.setMaxSeverity(elf::EMERGENCY);
-	Logger logger(testLog, "TESTFACILITY", elf::INFO);
-	logger << elf::DEBUG << "test entry 1" << elf::end_entry;
+	testLog.setMaxSeverity(EMERGENCY);
+	Logger logger(testLog, "TESTFACILITY", INFO);
+	logger << DEBUG << "test entry 1" << end_entry;
 
 	BOOST_CHECK(testLog.entries.empty());
 }
 
 BOOST_AUTO_TEST_CASE(do_log_on_low_level) {
 	TestLog testLog;
-	testLog.setMaxSeverity(elf::DEBUG);
-	Logger logger(testLog, "TESTFACILITY", elf::INFO);
-	logger << elf::EMERGENCY << "test entry " << 1 << elf::end_entry;
+	testLog.setMaxSeverity(Severity::DEBUG);
+	Logger logger(testLog, "TESTFACILITY", Severity::INFO);
+	logger << EMERGENCY << "test entry " << 1 << end_entry;
 
 	BOOST_REQUIRE(not testLog.entries.empty());
-	BOOST_REQUIRE(not testLog.entries[elf::EMERGENCY].empty());
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().facility, "TESTFACILITY");
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().message, L"test entry 1");
+	BOOST_REQUIRE(not testLog.entries[EMERGENCY].empty());
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().facility, "TESTFACILITY");
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().message, L"test entry 1");
 }
 
 BOOST_AUTO_TEST_CASE(do_utf32_log_on_low_level) {
 	TestLog testLog;
-	testLog.setMaxSeverity(elf::DEBUG);
-	Logger logger(testLog, "TESTFACILITY", elf::INFO);
-	logger << elf::EMERGENCY << L"test entry " << 1 << elf::end_entry;
+	testLog.setMaxSeverity(DEBUG);
+	Logger logger(testLog, "TESTFACILITY", INFO);
+	logger << EMERGENCY << L"test entry " << 1 << end_entry;
 
 	BOOST_REQUIRE(not testLog.entries.empty());
-	BOOST_REQUIRE(not testLog.entries[elf::EMERGENCY].empty());
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().facility, "TESTFACILITY");
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().message, L"test entry 1");
+	BOOST_REQUIRE(not testLog.entries[EMERGENCY].empty());
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().facility, "TESTFACILITY");
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().message, L"test entry 1");
 }
 
 BOOST_AUTO_TEST_CASE(do_utf16_log_on_low_level) {
 	TestLog testLog;
-	testLog.setMaxSeverity(elf::DEBUG);
-	Logger logger(testLog, "TESTFACILITY", elf::INFO);
-	logger << elf::EMERGENCY << L"test entry " << 1 << elf::end_entry;
+	testLog.setMaxSeverity(DEBUG);
+	Logger logger(testLog, "TESTFACILITY", INFO);
+	logger << EMERGENCY << L"test entry " << 1 << end_entry;
 
 	BOOST_REQUIRE(not testLog.entries.empty());
-	BOOST_REQUIRE(not testLog.entries[elf::EMERGENCY].empty());
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().facility, "TESTFACILITY");
-	BOOST_CHECK(testLog.entries[elf::EMERGENCY].front().message == L"test entry 1");
+	BOOST_REQUIRE(not testLog.entries[EMERGENCY].empty());
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().facility, "TESTFACILITY");
+	BOOST_CHECK(testLog.entries[EMERGENCY].front().message == L"test entry 1");
 }
 
 BOOST_AUTO_TEST_CASE(do_wchar_log_on_low_level) {
 	TestLog testLog;
-	testLog.setMaxSeverity(elf::DEBUG);
-	Logger logger(testLog, "TESTFACILITY", elf::INFO);
-	logger << elf::EMERGENCY << L"test entry " << 1 << elf::end_entry;
+	testLog.setMaxSeverity(DEBUG);
+	Logger logger(testLog, "TESTFACILITY", INFO);
+	logger << EMERGENCY << L"test entry " << 1 << end_entry;
 
 	BOOST_REQUIRE(not testLog.entries.empty());
-	BOOST_REQUIRE(not testLog.entries[elf::EMERGENCY].empty());
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().facility, "TESTFACILITY");
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().message, L"test entry 1");
+	BOOST_REQUIRE(not testLog.entries[EMERGENCY].empty());
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().facility, "TESTFACILITY");
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().message, L"test entry 1");
 }
 
 BOOST_AUTO_TEST_CASE(log_file_on_low_level) {
 	TestLog testLog;
-	testLog.setMaxSeverity(elf::DEBUG);
-	Logger logger(testLog, "TESTFACILITY", elf::INFO);
-	logger << elf::EMERGENCY << elf::file(__FILE__) << elf::end_entry;
+	testLog.setMaxSeverity(DEBUG);
+	Logger logger(testLog, "TESTFACILITY", INFO);
+	logger << EMERGENCY << file(__FILE__) << end_entry;
 
 	BOOST_REQUIRE(not testLog.entries.empty());
-	BOOST_REQUIRE(not testLog.entries[elf::EMERGENCY].empty());
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().facility, "TESTFACILITY");
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().message, L"");
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().location.file, __FILE__);
+	BOOST_REQUIRE(not testLog.entries[EMERGENCY].empty());
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().facility, "TESTFACILITY");
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().message, L"");
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().location.file, __FILE__);
 }
 
 BOOST_AUTO_TEST_CASE(log_line_on_low_level) {
 	TestLog testLog;
-	testLog.setMaxSeverity(elf::DEBUG);
-	Logger logger(testLog, "TESTFACILITY", elf::INFO);
-	logger << elf::EMERGENCY << elf::line(__LINE__) << elf::end_entry;
+	testLog.setMaxSeverity(DEBUG);
+	Logger logger(testLog, "TESTFACILITY", INFO);
+	logger << EMERGENCY << line(__LINE__) << end_entry;
 	auto line = __LINE__-1;
 
 	BOOST_REQUIRE(not testLog.entries.empty());
-	BOOST_REQUIRE(not testLog.entries[elf::EMERGENCY].empty());
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().facility, "TESTFACILITY");
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().message, L"");
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().location.line, line);
+	BOOST_REQUIRE(not testLog.entries[EMERGENCY].empty());
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().facility, "TESTFACILITY");
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().message, L"");
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().location.line, line);
 }
 
 BOOST_AUTO_TEST_CASE(log_func_on_low_level) {
 	TestLog testLog;
-	testLog.setMaxSeverity(elf::DEBUG);
-	Logger logger(testLog, "TESTFACILITY", elf::INFO);
-	logger << elf::EMERGENCY << elf::func(__FUNCTION__) << elf::end_entry;
+	testLog.setMaxSeverity(DEBUG);
+	Logger logger(testLog, "TESTFACILITY", INFO);
+	logger << EMERGENCY << func(__FUNCTION__) << end_entry;
 
 	BOOST_REQUIRE(not testLog.entries.empty());
-	BOOST_REQUIRE(not testLog.entries[elf::EMERGENCY].empty());
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().facility, "TESTFACILITY");
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().message, L"");
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().location.function, __FUNCTION__);
+	BOOST_REQUIRE(not testLog.entries[EMERGENCY].empty());
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().facility, "TESTFACILITY");
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().message, L"");
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().location.function, __FUNCTION__);
 }
 
 BOOST_AUTO_TEST_CASE(log_foo_on_low_level) {
 	TestLog testLog;
-	testLog.setMaxSeverity(elf::DEBUG);
-	Logger logger(testLog, "TESTFACILITY", elf::INFO);
-	logger << elf::EMERGENCY << set_foo(42) << elf::end_entry;
+	testLog.setMaxSeverity(DEBUG);
+	Logger logger(testLog, "TESTFACILITY", INFO);
+	logger << EMERGENCY << set_foo(42) << end_entry;
 
 	BOOST_REQUIRE(not testLog.entries.empty());
-	BOOST_REQUIRE(not testLog.entries[elf::EMERGENCY].empty());
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().facility, "TESTFACILITY");
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().message, L"");
+	BOOST_REQUIRE(not testLog.entries[EMERGENCY].empty());
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().facility, "TESTFACILITY");
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().message, L"");
 
 	int foo_val(0);
-	auto got_foo = testLog.entries[elf::EMERGENCY].front().get<foo>(foo_val);
+	auto got_foo = testLog.entries[EMERGENCY].front().get<foo>(foo_val);
 	BOOST_CHECK(got_foo);
 	BOOST_CHECK_EQUAL(foo_val, 42);
 }
 
 BOOST_AUTO_TEST_CASE(log_bar_on_low_level) {
 	TestLog testLog;
-	testLog.setMaxSeverity(elf::DEBUG);
-	Logger logger(testLog, "TESTFACILITY", elf::INFO);
-	logger << elf::EMERGENCY << set_bar("din mamma") << elf::end_entry;
+	testLog.setMaxSeverity(DEBUG);
+	Logger logger(testLog, "TESTFACILITY", INFO);
+	logger << EMERGENCY << set_bar("din mamma") << end_entry;
 
 	BOOST_REQUIRE(not testLog.entries.empty());
-	BOOST_REQUIRE(not testLog.entries[elf::EMERGENCY].empty());
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().facility, "TESTFACILITY");
-	BOOST_CHECK_EQUAL(testLog.entries[elf::EMERGENCY].front().message, L"");
+	BOOST_REQUIRE(not testLog.entries[EMERGENCY].empty());
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().facility, "TESTFACILITY");
+	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().message, L"");
 
 	string bar_val;
-	auto got_bar = testLog.entries[elf::EMERGENCY].front().get<bar>(bar_val);
+	auto got_bar = testLog.entries[EMERGENCY].front().get<bar>(bar_val);
 	BOOST_CHECK(got_bar);
 	BOOST_CHECK_EQUAL(bar_val, "din mamma");
 }
@@ -213,14 +213,14 @@ struct log_writer {
 
 	void operator() (Logger& logger) const {
 		for(int i=0; i<nMessages; ++i )
-			logger << writer_message << ":" << i << elf::end_entry;
+			logger << writer_message << ":" << i << end_entry;
 	}
 };
 
 BOOST_AUTO_TEST_CASE(multithreaded_writes_through_same_logger) {
 	TestLog testLog;
-	testLog.setMaxSeverity(elf::INFO);
-	Logger logger(testLog, "TEST_FACILITY", elf::INFO);
+	testLog.setMaxSeverity(INFO);
+	Logger logger(testLog, "TEST_FACILITY", INFO);
 
 	log_writer writer1("this is writer1 writing", 100);
 	log_writer writer2("this is writer2 writing", 200);
@@ -239,11 +239,11 @@ BOOST_AUTO_TEST_CASE(multithreaded_writes_through_same_logger) {
 		fourthThread.join();
 	}
 
-	BOOST_REQUIRE(not testLog.entries[elf::INFO].empty());
+	BOOST_REQUIRE(not testLog.entries[INFO].empty());
 
 	int firstWrites(0), secondWrites(0), thirdWrites(0), fourthWrites(0);
 
-	for(const auto& logEntry : testLog.entries[elf::INFO]) {
+	for(const auto& logEntry : testLog.entries[INFO]) {
 		if(logEntry.facility=="TEST_FACILITY") {
 			if(logEntry.message.find(L"this is writer1 writing:")==0 && atoi(logEntry.message.substr(24))==firstWrites)
 				++firstWrites;
@@ -264,11 +264,11 @@ BOOST_AUTO_TEST_CASE(multithreaded_writes_through_same_logger) {
 
 BOOST_AUTO_TEST_CASE(multithreaded_writes_through_different_loggers) {
 	TestLog testLog;
-	testLog.setMaxSeverity(elf::INFO);
-	Logger logger1(testLog, "TEST_FACILITY_1", elf::INFO);
-	Logger logger2(testLog, "TEST_FACILITY_2", elf::INFO);
-	Logger logger3(testLog, "TEST_FACILITY_3", elf::INFO);
-	Logger logger4(testLog, "TEST_FACILITY_4", elf::INFO);
+	testLog.setMaxSeverity(INFO);
+	Logger logger1(testLog, "TEST_FACILITY_1", INFO);
+	Logger logger2(testLog, "TEST_FACILITY_2", INFO);
+	Logger logger3(testLog, "TEST_FACILITY_3", INFO);
+	Logger logger4(testLog, "TEST_FACILITY_4", INFO);
 
 	log_writer writer("this is a message", 100);
 
@@ -284,28 +284,28 @@ BOOST_AUTO_TEST_CASE(multithreaded_writes_through_different_loggers) {
 		fourthThread.join();
 	}
 
-	BOOST_REQUIRE(not testLog.entries[elf::INFO].empty());
+	BOOST_REQUIRE(not testLog.entries[INFO].empty());
 
 	int firstWrites(0), secondWrites(0), thirdWrites(0), fourthWrites(0);
 
-	for(const auto& logEntry : testLog.entries[elf::INFO]) {
+	for(const auto& logEntry : testLog.entries[INFO]) {
 		if(logEntry.facility=="TEST_FACILITY_1") {
-			basic_ostringstream<elf::log_char> oss;
+			basic_ostringstream<log_char> oss;
 			oss << "this is a message" << ":" << firstWrites;
 			if(logEntry.message == oss.str())
 				++firstWrites;
 		} else if(logEntry.facility=="TEST_FACILITY_2") {
-			basic_ostringstream<elf::log_char> oss;
+			basic_ostringstream<log_char> oss;
 			oss << "this is a message" << ":" << secondWrites;
 			if(logEntry.message == oss.str())
 				++secondWrites;
 		} else if(logEntry.facility=="TEST_FACILITY_3") {
-			basic_ostringstream<elf::log_char> oss;
+			basic_ostringstream<log_char> oss;
 			oss << "this is a message" << ":" << thirdWrites;
 			if(logEntry.message == oss.str())
 				++thirdWrites;
 		} else if(logEntry.facility=="TEST_FACILITY_4") {
-			basic_ostringstream<elf::log_char> oss;
+			basic_ostringstream<log_char> oss;
 			oss << "this is a message" << ":" << fourthWrites;
 			if(logEntry.message == oss.str())
 				++fourthWrites;
@@ -320,11 +320,11 @@ BOOST_AUTO_TEST_CASE(multithreaded_writes_through_different_loggers) {
 
 BOOST_AUTO_TEST_CASE(multithreaded_writes_through_different_loggers_at_different_levels) {
 	TestLog testLog;
-	testLog.setMaxSeverity(elf::INFO);
-	Logger logger1(testLog, "TEST_FACILITY_1", elf::INFO);
-	Logger logger2(testLog, "TEST_FACILITY_2", elf::NOTICE);
-	Logger logger3(testLog, "TEST_FACILITY_3", elf::WARNING);
-	Logger logger4(testLog, "TEST_FACILITY_4", elf::ERROR);
+	testLog.setMaxSeverity(INFO);
+	Logger logger1(testLog, "TEST_FACILITY_1", INFO);
+	Logger logger2(testLog, "TEST_FACILITY_2", NOTICE);
+	Logger logger3(testLog, "TEST_FACILITY_3", WARNING);
+	Logger logger4(testLog, "TEST_FACILITY_4", ERROR);
 
 	log_writer writer("this is a message", 100);
 
@@ -342,9 +342,9 @@ BOOST_AUTO_TEST_CASE(multithreaded_writes_through_different_loggers_at_different
 
 	int firstWrites(0), secondWrites(0), thirdWrites(0), fourthWrites(0);
 
-	for(const auto& logEntry : testLog.entries[elf::INFO]) {
+	for(const auto& logEntry : testLog.entries[INFO]) {
 		if(logEntry.facility=="TEST_FACILITY_1") {
-			basic_ostringstream<elf::log_char> oss;
+			basic_ostringstream<log_char> oss;
 			oss << "this is a message" << ":" << firstWrites;
 			if(logEntry.message == oss.str())
 				++firstWrites;
@@ -352,27 +352,27 @@ BOOST_AUTO_TEST_CASE(multithreaded_writes_through_different_loggers_at_different
 	}
 
 
-	for(const auto& logEntry : testLog.entries[elf::NOTICE]) {
+	for(const auto& logEntry : testLog.entries[NOTICE]) {
 		if(logEntry.facility=="TEST_FACILITY_2") {
-			basic_ostringstream<elf::log_char> oss;
+			basic_ostringstream<log_char> oss;
 			oss << "this is a message" << ":" << secondWrites;
 			if(logEntry.message == oss.str())
 				++secondWrites;
 		}
 	}
 
-	for(const auto& logEntry : testLog.entries[elf::WARNING]) {
+	for(const auto& logEntry : testLog.entries[WARNING]) {
 		if(logEntry.facility=="TEST_FACILITY_3") {
-			basic_ostringstream<elf::log_char> oss;
+			basic_ostringstream<log_char> oss;
 			oss << "this is a message" << ":" << thirdWrites;
 			if(logEntry.message == oss.str())
 				++thirdWrites;
 		}
 	}
 
-	for(const auto& logEntry : testLog.entries[elf::ERROR]) {
+	for(const auto& logEntry : testLog.entries[ERROR]) {
 		if(logEntry.facility=="TEST_FACILITY_4") {
-			basic_ostringstream<elf::log_char> oss;
+			basic_ostringstream<log_char> oss;
 			oss << "this is a message" << ":" << fourthWrites;
 			if(logEntry.message == oss.str())
 				++fourthWrites;
@@ -390,15 +390,15 @@ BOOST_AUTO_TEST_CASE(write_to_two_logs_from_one_logger_added_separetely) {
 	Logger logger(testLogA, "TESTFACILITY");
 	logger.addLog(testLogB);
 
-	logger << elf::EMERGENCY << "this should be in both logs" << elf::end_entry;
+	logger << EMERGENCY << "this should be in both logs" << end_entry;
 
-	BOOST_REQUIRE(not testLogA.entries[elf::EMERGENCY].empty());
-	BOOST_CHECK_EQUAL(testLogA.entries[elf::EMERGENCY].front().facility, "TESTFACILITY");
-	BOOST_CHECK(testLogA.entries[elf::EMERGENCY].front().message == L"this should be in both logs");
+	BOOST_REQUIRE(not testLogA.entries[EMERGENCY].empty());
+	BOOST_CHECK_EQUAL(testLogA.entries[EMERGENCY].front().facility, "TESTFACILITY");
+	BOOST_CHECK(testLogA.entries[EMERGENCY].front().message == L"this should be in both logs");
 
-	BOOST_REQUIRE(not testLogB.entries[elf::EMERGENCY].empty());
-	BOOST_CHECK_EQUAL(testLogB.entries[elf::EMERGENCY].front().facility, "TESTFACILITY");
-	BOOST_CHECK(testLogB.entries[elf::EMERGENCY].front().message == L"this should be in both logs");
+	BOOST_REQUIRE(not testLogB.entries[EMERGENCY].empty());
+	BOOST_CHECK_EQUAL(testLogB.entries[EMERGENCY].front().facility, "TESTFACILITY");
+	BOOST_CHECK(testLogB.entries[EMERGENCY].front().message == L"this should be in both logs");
 }
 
 BOOST_AUTO_TEST_CASE(write_to_two_logs_from_one_logger_added_at_ctor) {
@@ -407,15 +407,15 @@ BOOST_AUTO_TEST_CASE(write_to_two_logs_from_one_logger_added_at_ctor) {
 	vector<TestLog*> logs = {&testLogA, &testLogB};
 	Logger logger(logs.begin(), logs.end(), "TESTFACILITY");
 
-	logger << elf::EMERGENCY << "this should be in both logs" << elf::end_entry;
+	logger << EMERGENCY << "this should be in both logs" << end_entry;
 
-	BOOST_REQUIRE(not testLogA.entries[elf::EMERGENCY].empty());
-	BOOST_CHECK_EQUAL(testLogA.entries[elf::EMERGENCY].front().facility, "TESTFACILITY");
-	BOOST_CHECK(testLogA.entries[elf::EMERGENCY].front().message == L"this should be in both logs");
+	BOOST_REQUIRE(not testLogA.entries[EMERGENCY].empty());
+	BOOST_CHECK_EQUAL(testLogA.entries[EMERGENCY].front().facility, "TESTFACILITY");
+	BOOST_CHECK(testLogA.entries[EMERGENCY].front().message == L"this should be in both logs");
 
-	BOOST_REQUIRE(not testLogB.entries[elf::EMERGENCY].empty());
-	BOOST_CHECK_EQUAL(testLogB.entries[elf::EMERGENCY].front().facility, "TESTFACILITY");
-	BOOST_CHECK(testLogB.entries[elf::EMERGENCY].front().message == L"this should be in both logs");
+	BOOST_REQUIRE(not testLogB.entries[EMERGENCY].empty());
+	BOOST_CHECK_EQUAL(testLogB.entries[EMERGENCY].front().facility, "TESTFACILITY");
+	BOOST_CHECK(testLogB.entries[EMERGENCY].front().message == L"this should be in both logs");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

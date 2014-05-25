@@ -31,27 +31,27 @@
 using namespace std;
 using namespace elf;
 
-Logger& elf::end_entry(Logger& logger, LogEntry& entry) {
+Logger& elf::end_entry(Logger& logger, Entry& entry) {
 	logger.flush();
 	return logger;
 }
 
-function<Logger&(Logger&, LogEntry&)> elf::file(const string& _file) {
-	return [&] (Logger& logger, LogEntry& entry) -> Logger& {
+function<Logger&(Logger&, Entry&)> elf::file(const string& _file) {
+	return [&] (Logger& logger, Entry& entry) -> Logger& {
 		entry.location.file = _file;
 		return logger;
 	};
 }
 
-function<Logger&(Logger&, LogEntry&)> elf::line(int _line) {
-	return [=] (Logger& logger, LogEntry& entry) -> Logger& {
+function<Logger&(Logger&, Entry&)> elf::line(int _line) {
+	return [=] (Logger& logger, Entry& entry) -> Logger& {
 		entry.location.line = _line;
 		return logger;
 	};
 }
 
-function<Logger&(Logger&, LogEntry&)> elf::func(const string& _func) {
-	return [&] (Logger& logger, LogEntry& entry) -> Logger& {
+function<Logger&(Logger&, Entry&)> elf::func(const string& _func) {
+	return [&] (Logger& logger, Entry& entry) -> Logger& {
 		entry.location.function = _func;
 		return logger;
 	};
@@ -92,11 +92,11 @@ const std::list<ILog*>& Logger::getLogs() const {
 
 void Logger::flush() {
 	lock_guard<mutex> lock_current_entry(_currentEntryMutex);
-	map<thread::id, LogEntry>::iterator entryIt = _currentEntries.find(this_thread::get_id());
+	map<thread::id, Entry>::iterator entryIt = _currentEntries.find(this_thread::get_id());
 	if(entryIt!=_currentEntries.end()) {
-		LogEntry& entry = entryIt->second;
+		Entry& entry = entryIt->second;
 		for(auto log : _logs)
-			log->addEntry(entry);
+			log->handle(entry);
 
 		_currentEntries.erase(entryIt);
 	}

@@ -35,10 +35,10 @@ class StreamLog : public ILog {
 public:
 	StreamLog(std::ostream& os, Severity maxSeverity=elf::INFO) : ILog(maxSeverity), _os(os) { }
 
-	virtual void flush() { _os.flush(); };
+	void flush() override { _os.flush(); };
 
 protected:
-	virtual void addEntryImpl(const LogEntry& entry) {
+	void addEntry(const Entry& entry) override {
 		typedef std::chrono::seconds secs_t;
 		typedef std::chrono::milliseconds millis_t;
 		int64_t secs = std::chrono::duration_cast<secs_t>(entry.time.time_since_epoch()).count();

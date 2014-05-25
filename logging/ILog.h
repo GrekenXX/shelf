@@ -106,14 +106,14 @@ static logstring to_logstring(const T& t) {
 	return logstring_cast<clean_type>::cast(t);
 }
 
-struct LogEntry {
+struct Entry {
 	struct Location {
 		std::string file;
 		std::string function;
 		int line;
 	};
 
-	LogEntry() :
+	Entry() :
 		severity{DEBUG},
 		time{std::chrono::high_resolution_clock::now()}
 	{
@@ -148,36 +148,6 @@ private:
 	std::unordered_map<std::type_index, boost::any> _custom_data;
 };
 
-//struct LogEntry {
-//	template<typename T>
-//	void set_data(const std::string& key, const T& value) {
-//		auto keyIt = std::find(std::begin(_keys), std::end(_keys), key);
-//		if (keyIt != std::end(_keys)) {
-//			_values[keyIt - std::begin(_keys)] = to_logstring(value);
-//		} else {
-//			_keys.push_back(key);
-//			_values.push_back(to_logstring(value));
-//		}
-//	}
-//
-//	boost::optional<const logstring&> get_data(const std::string& key) {
-//		auto keyIt = std::find(std::begin(_keys), std::end(_keys), key);
-//		if (keyIt != std::end(_keys))
-//			return _values[keyIt - std::begin(_keys)];
-//
-//		return {};
-//	}
-//
-//	Severity severity;
-//	std::string facility;
-//	logtime time;
-//	logstring message;
-//
-//private:
-//	std::vector<std::string> _keys;
-//	std::vector<logstring> _values;
-//};
-
 class ILog {
 public:
 	ILog(Severity maxSeverity=elf::INFO) : _maxSeverity(maxSeverity) { }
@@ -186,11 +156,11 @@ public:
 	Severity getMaxSeverity() const;
 	void setMaxSeverity(Severity maxSeverity);
 
-	void addEntry(const LogEntry& entry);
+	void handle(const Entry& entry);
 	virtual void flush() = 0;
 
 protected:
-	virtual void addEntryImpl(const LogEntry& entry) = 0;
+	virtual void addEntry(const Entry& entry) = 0;
 
 private:
 	Severity _maxSeverity;

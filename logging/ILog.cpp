@@ -38,10 +38,10 @@ void ILog::setMaxSeverity(Severity severity) {
 	_maxSeverity = severity;
 }
 
-void ILog::addEntry(const LogEntry& entry) {
+void ILog::handle(const Entry& entry) {
 	if(entry.severity<=_maxSeverity) {
 		lock_guard<mutex> lock(_mutex);
-		this->addEntryImpl(entry);
+		this->addEntry(entry);
 	}
 }
 
