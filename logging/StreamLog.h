@@ -29,23 +29,23 @@
 #include "ILog.h"
 #include <ostream>
 
-namespace logging {
+namespace elf {
 
 class StreamLog : public ILog {
 public:
-	StreamLog(std::ostream& os, Severity maxSeverity=logging::INFO) : ILog(maxSeverity), _os(os) { }
+	StreamLog(std::ostream& os, Severity maxSeverity=elf::INFO) : ILog(maxSeverity), _os(os) { }
 
 	virtual void flush() { _os.flush(); };
 
 protected:
-	virtual void addEntryImpl(const std::string& facility, const LogEntry& entry) {
+	virtual void addEntryImpl(const LogEntry& entry) {
 		typedef std::chrono::seconds secs_t;
 		typedef std::chrono::milliseconds millis_t;
 		int64_t secs = std::chrono::duration_cast<secs_t>(entry.time.time_since_epoch()).count();
-		int64_t millis = std::chrono::duration_cast<millis_t>(entry.time.time_since_epoch()).count();
-		_os << "|" << toString(entry.severity) <<
+		int64_t millis = std::chrono::duration_cast<millis_t>(entry.time.time_since_epoch()).count() - 1000*secs;
+		_os << "|" << to_string(entry.severity) <<
 			   "|" << secs << "." << millis <<
-			   "|" << facility <<
+			   "|" << entry.facility <<
 			   "|" << entry.message <<
 			   std::endl;
 	}

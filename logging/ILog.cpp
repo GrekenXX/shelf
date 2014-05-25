@@ -28,7 +28,7 @@
 #include <mutex>
 
 using namespace std;
-using namespace logging;
+using namespace elf;
 
 Severity ILog::getMaxSeverity() const {
 	return _maxSeverity;
@@ -38,14 +38,14 @@ void ILog::setMaxSeverity(Severity severity) {
 	_maxSeverity = severity;
 }
 
-void ILog::addEntry(const std::string& facility, const LogEntry& entry) {
+void ILog::addEntry(const LogEntry& entry) {
 	if(entry.severity<=_maxSeverity) {
-		lock_guard<std::mutex> lock(_mutex);
-		this->addEntryImpl(facility, entry);
+		lock_guard<mutex> lock(_mutex);
+		this->addEntryImpl(entry);
 	}
 }
 
-std::string ILog::toString(Severity severity) {
+string elf::to_string(Severity severity) {
 	switch(severity) {
 	case EMERGENCY:		return "EMERGENCY";
 	case ALERT:			return "ALERT";
