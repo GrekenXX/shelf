@@ -36,23 +36,30 @@ Logger& elf::end_entry(Logger& logger, Entry&) {
 	return logger;
 }
 
-function<Logger&(Logger&, Entry&)> elf::file(const string& _file) {
-	return [&] (Logger& logger, Entry& entry) -> Logger& {
-		entry.location.file = _file;
-		return logger;
-	};
-}
-
-function<Logger&(Logger&, Entry&)> elf::line(int _line) {
+function<Logger&(Logger&, Entry&)> elf::file(const string& file) {
 	return [=] (Logger& logger, Entry& entry) -> Logger& {
-		entry.location.line = _line;
+		entry.location.file = file;
 		return logger;
 	};
 }
 
-function<Logger&(Logger&, Entry&)> elf::func(const string& _func) {
-	return [&] (Logger& logger, Entry& entry) -> Logger& {
-		entry.location.function = _func;
+function<Logger&(Logger&, Entry&)> elf::line(int line) {
+	return [=] (Logger& logger, Entry& entry) -> Logger& {
+		entry.location.line = line;
+		return logger;
+	};
+}
+
+function<Logger&(Logger&, Entry&)> elf::func(const string& func) {
+	return [=] (Logger& logger, Entry& entry) -> Logger& {
+		entry.location.function = func;
+		return logger;
+	};
+}
+
+function<Logger&(Logger&, Entry&)> elf::location(const string& func, const string& file, int line) {
+	return [=] (Logger& logger, Entry& entry) -> Logger& {
+		entry.location = elf::Location{func, file, line};
 		return logger;
 	};
 }

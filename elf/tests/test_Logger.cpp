@@ -43,11 +43,16 @@ BOOST_AUTO_TEST_SUITE(test_logger)
 
 struct TestLog : public ILog {
 	map<Severity, vector<Entry> > entries;
+	bool print_stuff = false;
 
 	void flush() override { }
 protected:
 	void addEntry(const Entry& entry) override {
 		entries[entry.severity].push_back(entry);
+		if(print_stuff) {
+			cout << to_string(entry.severity) << ": "
+				 << "{" << entry.facility << "}[" << entry.location << "]" << entry.message << endl;
+		}
 	}
 };
 
@@ -59,8 +64,8 @@ function<Logger&(Logger&, Entry&)> set_foo(int fooVal) {
 	};
 }
 
-struct bar { };
-function<Logger&(Logger&, Entry&)> set_bar(const string& bar_val) {
+struct bar { std::string _bar; };
+function<Logger&(Logger&, Entry&)> set_bar(const bar& bar_val) {
 	return [=] (Logger& l, Entry& e) -> Logger& {
 		e.set<bar>(bar_val);
 		return l;
@@ -99,7 +104,7 @@ BOOST_AUTO_TEST_CASE(do_utf32_log_on_low_level) {
 	TestLog testLog;
 	testLog.setMaxSeverity(DEBUG);
 	Logger logger(testLog, "TESTFACILITY", INFO);
-	logger << EMERGENCY << L"test entry " << 1 << end_entry;
+	logger << EMERGENCY << U"test entry " << 1 << end_entry;
 
 	BOOST_REQUIRE(not testLog.entries.empty());
 	BOOST_REQUIRE(not testLog.entries[EMERGENCY].empty());
@@ -111,7 +116,7 @@ BOOST_AUTO_TEST_CASE(do_utf16_log_on_low_level) {
 	TestLog testLog;
 	testLog.setMaxSeverity(DEBUG);
 	Logger logger(testLog, "TESTFACILITY", INFO);
-	logger << EMERGENCY << L"test entry " << 1 << end_entry;
+	logger << EMERGENCY << u"test entry " << 1 << end_entry;
 
 	BOOST_REQUIRE(not testLog.entries.empty());
 	BOOST_REQUIRE(not testLog.entries[EMERGENCY].empty());
@@ -135,40 +140,64 @@ BOOST_AUTO_TEST_CASE(log_file_on_low_level) {
 	TestLog testLog;
 	testLog.setMaxSeverity(DEBUG);
 	Logger logger(testLog, "TESTFACILITY", INFO);
-	logger << EMERGENCY << file(__FILE__) << end_entry;
+	logger << EMERGENCY << ELF_FILE << end_entry;
 
 	BOOST_REQUIRE(not testLog.entries.empty());
 	BOOST_REQUIRE(not testLog.entries[EMERGENCY].empty());
-	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().facility, "TESTFACILITY");
-	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().message, L"");
-	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().location.file, __FILE__);
+
+	auto entry = testLog.entries[EMERGENCY].front();
+	BOOST_CHECK_EQUAL(entry.facility, "TESTFACILITY");
+	BOOST_CHECK_EQUAL(entry.message, L"");
+	BOOST_CHECK_EQUAL(entry.location.file, __FILE__);
 }
 
 BOOST_AUTO_TEST_CASE(log_line_on_low_level) {
 	TestLog testLog;
 	testLog.setMaxSeverity(DEBUG);
 	Logger logger(testLog, "TESTFACILITY", INFO);
-	logger << EMERGENCY << line(__LINE__) << end_entry;
+	logger << EMERGENCY << ELF_LINE << end_entry;
 	auto line = __LINE__-1;
 
 	BOOST_REQUIRE(not testLog.entries.empty());
 	BOOST_REQUIRE(not testLog.entries[EMERGENCY].empty());
-	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().facility, "TESTFACILITY");
-	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().message, L"");
-	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().location.line, line);
+
+	auto entry = testLog.entries[EMERGENCY].front();
+	BOOST_CHECK_EQUAL(entry.facility, "TESTFACILITY");
+	BOOST_CHECK_EQUAL(entry.message, L"");
+	BOOST_CHECK_EQUAL(entry.location.line, line);
 }
 
 BOOST_AUTO_TEST_CASE(log_func_on_low_level) {
 	TestLog testLog;
 	testLog.setMaxSeverity(DEBUG);
 	Logger logger(testLog, "TESTFACILITY", INFO);
-	logger << EMERGENCY << func(__FUNCTION__) << end_entry;
+	logger << EMERGENCY << ELF_FUNC << end_entry;
 
 	BOOST_REQUIRE(not testLog.entries.empty());
 	BOOST_REQUIRE(not testLog.entries[EMERGENCY].empty());
-	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().facility, "TESTFACILITY");
-	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().message, L"");
-	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().location.function, __FUNCTION__);
+
+	auto entry = testLog.entries[EMERGENCY].front();
+	BOOST_CHECK_EQUAL(entry.facility, "TESTFACILITY");
+	BOOST_CHECK_EQUAL(entry.message, L"");
+	BOOST_CHECK_EQUAL(entry.location.function, __func__);
+}
+
+BOOST_AUTO_TEST_CASE(log_full_location_on_low_level) {
+	TestLog testLog;
+	testLog.setMaxSeverity(DEBUG);
+	Logger logger(testLog, "TESTFACILITY", INFO);
+	logger << EMERGENCY << ELF_LOC << end_entry;
+	auto line = __LINE__ - 1;
+
+	BOOST_REQUIRE(not testLog.entries.empty());
+	BOOST_REQUIRE(not testLog.entries[EMERGENCY].empty());
+
+	auto entry = testLog.entries[EMERGENCY].front();
+	BOOST_CHECK_EQUAL(entry.facility, "TESTFACILITY");
+	BOOST_CHECK_EQUAL(entry.message, L"");
+	BOOST_CHECK_EQUAL(entry.location.function, __func__);
+	BOOST_CHECK_EQUAL(entry.location.file, __FILE__);
+	BOOST_CHECK_EQUAL(entry.location.line, line);
 }
 
 BOOST_AUTO_TEST_CASE(log_foo_on_low_level) {
@@ -192,17 +221,17 @@ BOOST_AUTO_TEST_CASE(log_bar_on_low_level) {
 	TestLog testLog;
 	testLog.setMaxSeverity(DEBUG);
 	Logger logger(testLog, "TESTFACILITY", INFO);
-	logger << EMERGENCY << set_bar("din mamma") << end_entry;
+	logger << EMERGENCY << set_bar({"din mamma"}) << end_entry;
 
 	BOOST_REQUIRE(not testLog.entries.empty());
 	BOOST_REQUIRE(not testLog.entries[EMERGENCY].empty());
 	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().facility, "TESTFACILITY");
 	BOOST_CHECK_EQUAL(testLog.entries[EMERGENCY].front().message, L"");
 
-	string bar_val;
+	bar bar_val;
 	auto got_bar = testLog.entries[EMERGENCY].front().get<bar>(bar_val);
 	BOOST_CHECK(got_bar);
-	BOOST_CHECK_EQUAL(bar_val, "din mamma");
+	BOOST_CHECK_EQUAL(bar_val._bar, "din mamma");
 }
 
 struct log_writer {

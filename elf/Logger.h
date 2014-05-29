@@ -121,7 +121,13 @@ Logger& end_entry(Logger&, Entry&);
 std::function<Logger&(Logger&, Entry&)> file(const std::string& _file);
 std::function<Logger&(Logger&, Entry&)> line(int _line);
 std::function<Logger&(Logger&, Entry&)> func(const std::string& _func);
+std::function<Logger&(Logger&, Entry&)> location(const std::string& _func, const std::string& _file, int line);
 
 }
+
+#define ELF_FILE elf::file(__FILE__)
+#define ELF_LINE elf::line(__LINE__)
+#define ELF_FUNC elf::func(__func__)
+#define ELF_LOC elf::location(__func__,__FILE__,__LINE__)
 
 #endif /* LOGGER_H_ */

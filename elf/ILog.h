@@ -106,13 +106,36 @@ static logstring to_logstring(const T& t) {
 	return logstring_cast<clean_type>::cast(t);
 }
 
-struct Entry {
-	struct Location {
-		std::string file;
-		std::string function;
-		int line;
-	};
+class Logger;
+struct Entry;
 
+struct Location {
+	Location();
+	Location(const std::string& _func, const std::string& _file, int _line);
+	Location(const Location& loc);
+	Location(Location&& loc);
+	Location& operator = (const Location& loc);
+	Location& operator = (Location&& loc);
+
+	std::string function;
+	std::string file;
+	int line;
+};
+
+template<typename OS>
+OS& operator << (OS& os, const elf::Location& loc) {
+	if (loc.function.size())
+		os << loc.function;
+	if (loc.function.size() && (loc.file.size() || loc.line>0))
+		os << " @ ";
+	if (loc.file.size())
+		os << loc.file;
+	if (loc.line>0)
+		os << ":" << loc.line;
+	return os;
+}
+
+struct Entry {
 	Entry() :
 		severity{DEBUG},
 		time{std::chrono::high_resolution_clock::now()}

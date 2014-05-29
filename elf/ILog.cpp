@@ -59,3 +59,38 @@ string elf::to_string(Severity severity) {
 
 	return "UNKNOWN_LOG_LEVEL";
 }
+
+Location::Location() : line{-1} {
+}
+
+Location::Location(const std::string& _func, const std::string& _file, int _line) :
+	function{_func},
+	file{_file},
+	line{_line} {
+}
+
+Location::Location(const Location& loc) :
+	function{loc.function},
+	file{loc.file},
+	line{loc.line} {
+}
+
+Location::Location(Location&& loc) :
+	function{std::move(loc.function)},
+	file{std::move(loc.file)},
+	line{loc.line} {
+}
+
+Location& Location::operator = (const Location& loc) {
+	function = loc.function;
+	file = loc.file;
+	line = loc.line;
+	return *this;
+}
+
+Location& Location::operator = (Location&& loc) {
+	function = std::move(loc.function);
+	file = std::move(loc.file);
+	line = loc.line;
+	return *this;
+}
