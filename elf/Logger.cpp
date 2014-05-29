@@ -31,7 +31,7 @@
 using namespace std;
 using namespace elf;
 
-Logger& elf::end_entry(Logger& logger, Entry& entry) {
+Logger& elf::end_entry(Logger& logger, Entry&) {
 	logger.flush();
 	return logger;
 }

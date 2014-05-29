@@ -98,12 +98,12 @@ private:
 
 // Default behavior: append data to message
 template<typename T>
-inline void Logger::LogWriter<T>::write(Logger& logger, Entry& entry, const T& data) {
+inline void Logger::LogWriter<T>::write(Logger&, Entry& entry, const T& data) {
 	entry.message += to_logstring(data);
 }
 
 template<>
-inline void Logger::LogWriter<elf::Severity>::write(Logger& logger, Entry& entry, const elf::Severity& severity) {
+inline void Logger::LogWriter<elf::Severity>::write(Logger&, Entry& entry, const elf::Severity& severity) {
 	entry.severity = severity;
 }
 
