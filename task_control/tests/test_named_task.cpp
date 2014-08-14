@@ -38,8 +38,8 @@ using namespace task_control;
 struct test_named_task : ::testing::Test {
 	test_named_task() :
 		task_function{},
-		init_callback_wait{10000},
-		stop_wait{10000},
+		init_callback_wait{50000},
+		stop_wait{50000},
 		task{"my_named_task", ref(task_function)} {
 	}
 
@@ -86,7 +86,7 @@ TEST_F(test_named_task, start_timeout_with_run) {
 TEST_F(test_named_task, exception_mid_run) {
 	task_function.lap_callback = [] (int lap) {
 		if (lap == 3)
-		throw "WTF";
+			throw "WTF";
 	};
 	task_function.min_laps = 4;
 	auto init_result = task.start();

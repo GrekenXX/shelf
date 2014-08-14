@@ -26,6 +26,7 @@
 								<option id="gnu.cpp.compiler.exe.debug.option.debugging.level.1474127370" name="Debug Level" superClass="gnu.cpp.compiler.exe.debug.option.debugging.level" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.other.other.1963456694" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0 -std=c++11" valueType="string"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1066358143" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/home/gedi/shelf"/>
 									<listOptionValue builtIn="false" value="/home/georgios/Libs/gtest-1.7.0/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/c++/4.8.1"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc}&quot;"/>
@@ -39,6 +40,7 @@
 								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.exe.debug.option.optimization.level.102379227" name="Optimization Level" superClass="gnu.c.compiler.exe.debug.option.optimization.level" valueType="enumerated"/>
 								<option id="gnu.c.compiler.exe.debug.option.debugging.level.165224973" name="Debug Level" superClass="gnu.c.compiler.exe.debug.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.1487318304" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/home/gedi/shelf"/>
 									<listOptionValue builtIn="false" value="/home/georgios/Libs/gtest-1.7.0/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/c++/4.8.1"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc}&quot;"/>
@@ -101,6 +103,7 @@
 								<option id="gnu.cpp.compiler.exe.release.option.optimization.level.4653308" name="Optimization Level" superClass="gnu.cpp.compiler.exe.release.option.optimization.level" value="gnu.cpp.compiler.optimization.level.most" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.exe.release.option.debugging.level.250095588" name="Debug Level" superClass="gnu.cpp.compiler.exe.release.option.debugging.level" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1265572202" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/home/gedi/shelf"/>
 									<listOptionValue builtIn="false" value="/home/georgios/Libs/gtest-1.7.0/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/c++/4.8.1"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc}&quot;"/>
@@ -115,6 +118,7 @@
 								<option defaultValue="gnu.c.optimization.level.most" id="gnu.c.compiler.exe.release.option.optimization.level.1804242083" name="Optimization Level" superClass="gnu.c.compiler.exe.release.option.optimization.level" valueType="enumerated"/>
 								<option id="gnu.c.compiler.exe.release.option.debugging.level.277376876" name="Debug Level" superClass="gnu.c.compiler.exe.release.option.debugging.level" value="gnu.c.debugging.level.none" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.1926069371" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/home/gedi/shelf"/>
 									<listOptionValue builtIn="false" value="/home/georgios/Libs/gtest-1.7.0/include"/>
 									<listOptionValue builtIn="false" value="/usr/include/c++/4.8.1"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc}&quot;"/>
